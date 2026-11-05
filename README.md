@@ -81,3 +81,15 @@ La courbe d'entraînement (~15 pommes) est plus basse que l'évaluation, parce q
 | départs 10 à 30 coups avant chacune de ses morts | 51,3 | 50,7 |
 
 → Aucun gain : le manque d'expérience avec un long corps n'était pas le problème. La limite restante, c'est l'observation. Les 17 capteurs ne montrent ni la forme du corps ni la position de la queue, donc certaines poches restent imprévisibles. Piste suivante : donner la grille entière en entrée, avec un CNN.
+
+**7. Encore plus de capteurs ?** (γ 0.99, 3 seeds)
+
+| capteurs | nombre | pommes |
+|---|---|---|
+| **actuels** | **17** | **51,3** |
+| + direction de la queue (4), distance à la queue, longueur | 23 | 49,3 |
+| + fenêtre 7×7 autour de la tête, orientée dans le sens du regard (corps ou mur = 1) | 65 | 45,7 |
+| + fenêtre 7×7, entraînement de 400k pas | 65 | 43,4 |
+| + fenêtre 7×7, réseau 256×256 | 65 | 44,1 |
+
+→ Plus de capteurs ne veut pas dire de meilleurs capteurs. Les 3 valeurs d'« espace libre » résument déjà l'essentiel (« ce côté m'enferme-t-il ? »). Des entrées brutes en plus obligent le DQN à retrouver lui-même ce qui compte, et l'apprentissage se dégrade, même avec plus d'entraînement ou un réseau plus gros. On garde 17 capteurs.
