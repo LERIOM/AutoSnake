@@ -119,7 +119,7 @@ def moyenne_pommes(politique, n=50):
         while not done:
             obs, r, term, trunc, info = env.step(politique(obs)); done = term or trunc
         scores.append(info["score"])
-    return np.mean(scores), np.max(scores)
+    return f"{np.mean(scores):.1f} pommes en moyenne (max {max(scores)})"
 
 
 if __name__ == "__main__":
@@ -129,7 +129,7 @@ if __name__ == "__main__":
 
     if os.path.exists("snake_dqn.zip"):    # déjà entraîné -> démo directe (supprimez le .zip pour ré-entraîner)
         model = DQN.load("snake_dqn")
-        print(f"Agent DQN : {moyenne_pommes(lambda o: int(model.predict(o, deterministic=True)[0]))} (moyenne, max)")
+        print(f"Agent DQN : {moyenne_pommes(lambda o: int(model.predict(o, deterministic=True)[0]))}")
         regarder_jouer(model); raise SystemExit
 
     env = Monitor(SnakeEnv(), "snake", info_keywords=("score",))   # log de chaque partie -> snake.monitor.csv
@@ -155,7 +155,7 @@ if __name__ == "__main__":
 
     # Comparaison au hasard
     rng = np.random.default_rng(0)
-    print(f"Hasard    : {moyenne_pommes(lambda o: int(rng.integers(3)))} (moyenne, max)")
-    print(f"Agent DQN : {moyenne_pommes(lambda o: int(model.predict(o, deterministic=True)[0]))} (moyenne, max)")
+    print(f"Hasard    : {moyenne_pommes(lambda o: int(rng.integers(3)))}")
+    print(f"Agent DQN : {moyenne_pommes(lambda o: int(model.predict(o, deterministic=True)[0]))}")
     print("Entraînement terminé — courbe.png enregistrée — ouverture de la fenêtre.")
     regarder_jouer(model)
