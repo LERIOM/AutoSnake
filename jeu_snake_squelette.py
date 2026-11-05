@@ -111,9 +111,28 @@ def regarder_jouer(model, n_parties=6):
     pygame.quit()
 
 
+def moyenne_pommes(politique, n=50):
+    """Score moyen (pommes) d'une politique obs -> action sur n parties."""
+    env, scores = SnakeEnv(), []
+    for i in range(n):
+        obs, _ = env.reset(seed=1000 + i); done = False
+        while not done:
+            obs, r, term, trunc, info = env.step(politique(obs)); done = term or trunc
+        scores.append(info["score"])
+    return np.mean(scores), np.max(scores)
+
+
 if __name__ == "__main__":
+    import os
     from stable_baselines3 import DQN      # (vous pouvez aussi importer et tester PPO)
-    env = SnakeEnv()
+    from stable_baselines3.common.monitor import Monitor
+
+    if os.path.exists("snake_dqn.zip"):    # déjà entraîné -> démo directe (supprimez le .zip pour ré-entraîner)
+        model = DQN.load("snake_dqn")
+        print(f"Agent DQN : {moyenne_pommes(lambda o: int(model.predict(o, deterministic=True)[0]))} (moyenne, max)")
+        regarder_jouer(model); raise SystemExit
+
+    env = Monitor(SnakeEnv(), "snake", info_keywords=("score",))   # log de chaque partie -> snake.monitor.csv
     print(f"Entraînement ({TIMESTEPS} pas)… patientez.")
 
     # DQN : actions discrètes + petit vecteur d'état. Variantes comparées : voir train.py.
@@ -125,5 +144,18 @@ if __name__ == "__main__":
                 target_update_interval=500, train_freq=4, seed=0)
     model.learn(total_timesteps=TIMESTEPS)
     model.save("snake_dqn")
-    print("Entraînement terminé — ouverture de la fenêtre.")
+
+    # Courbe d'apprentissage : pommes par partie (moyenne glissante sur 100 parties)
+    import pandas as pd, matplotlib.pyplot as plt
+    df = pd.read_csv("snake.monitor.csv", skiprows=1)
+    plt.plot(df["l"].cumsum(), df["score"].rolling(100, min_periods=1).mean(), label="DQN")
+    plt.axhline(0.1, color="grey", ls="--", label="hasard")
+    plt.xlabel("pas d'entraînement"); plt.ylabel("pommes par partie"); plt.legend(); plt.grid(alpha=.3)
+    plt.title("Courbe d'apprentissage — Snake DQN"); plt.savefig("courbe.png", dpi=120)
+
+    # Comparaison au hasard
+    rng = np.random.default_rng(0)
+    print(f"Hasard    : {moyenne_pommes(lambda o: int(rng.integers(3)))} (moyenne, max)")
+    print(f"Agent DQN : {moyenne_pommes(lambda o: int(model.predict(o, deterministic=True)[0]))} (moyenne, max)")
+    print("Entraînement terminé — courbe.png enregistrée — ouverture de la fenêtre.")
     regarder_jouer(model)
