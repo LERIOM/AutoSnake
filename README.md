@@ -71,3 +71,13 @@ La courbe d'entraînement (~15 pommes) est plus basse que l'évaluation, parce q
 | γ 0.99 | 51,3 | 50,2 | 50,7 |
 
 → Le malus aide un peu avec γ 0.9, mais devient inutile avec γ 0.99 : la mort future pèse déjà assez pour que l'agent apprenne seul à éviter les poches. Il n'a donc pas été retenu.
+
+**6. Deuxième entraînement avec des départs « serpent long »** (*curriculum*) : on reprend le modèle γ 0.99 et on l'entraîne 100k pas de plus. La moitié des parties démarrent depuis des positions de l'agent avec un long corps. On compare à un témoin entraîné aussi longtemps avec des départs normaux (3 seeds) :
+
+| 2ᵉ entraînement | avant | après |
+|---|---|---|
+| témoin (départs normaux) | 51,3 | 52,1 |
+| départs à 25-50 pommes | 51,3 | 49,9 |
+| départs 10 à 30 coups avant chacune de ses morts | 51,3 | 50,7 |
+
+→ Aucun gain : le manque d'expérience avec un long corps n'était pas le problème. La limite restante, c'est l'observation. Les 17 capteurs ne montrent ni la forme du corps ni la position de la queue, donc certaines poches restent imprévisibles. Piste suivante : donner la grille entière en entrée, avec un CNN.
