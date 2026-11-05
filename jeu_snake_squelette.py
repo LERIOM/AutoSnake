@@ -7,7 +7,7 @@ pas définie l'agent n'apprend rien : c'est justement l'exercice de la séance.
 À COMPLÉTER (cherchez les  # TODO) :
   1) la RÉCOMPENSE dans step()  ............... le cœur du MDP
   2) l'ENTRAÎNEMENT (algo + hyperparamètres) ... en bas du fichier
-  (BONUS) enrichir l'OBSERVATION dans _obs()
+  (BONUS) enrichir l'OBSERVATION dans _obs()  -> fait : 6 capteurs en plus (17 au total)
 
 Lancer :  python jeu_snake_squelette.py
 Dépendances :  pip install gymnasium stable-baselines3 torch pygame numpy
@@ -29,23 +29,39 @@ class SnakeEnv(gym.Env):
         super().__init__()
         self.grid = grid
         self.action_space = spaces.Discrete(3)                   # 0=tout droit, 1=tourner à droite, 2=à gauche
-        self.observation_space = spaces.Box(0.0, 1.0, (11,), np.float32)
+        self.observation_space = spaces.Box(0.0, 1.0, (17,), np.float32)   # 11 fournis + 6 (BONUS)
 
     def _danger(self, pt):
         x, y = pt
         return x < 0 or x >= self.grid or y < 0 or y >= self.grid or (x, y) in self.snake
 
+    def _espace_libre(self, depart):
+        """BONUS : part des cases libres atteignables depuis `depart` (flood fill), 0 si `depart` est mortel.
+        Permet à l'agent de « voir » qu'un virage l'enferme dans son propre corps."""
+        if self._danger(depart): return 0.0
+        vus, a_voir = {depart}, [depart]
+        while a_voir:
+            x, y = a_voir.pop()
+            for dx, dy in DIRS:
+                p = (x + dx, y + dy)
+                if p not in vus and not self._danger(p):
+                    vus.add(p); a_voir.append(p)
+        return len(vus) / (self.grid * self.grid - len(self.snake))
+
     def _obs(self):
         # 11 "capteurs" FOURNIS : danger devant/droite/gauche, direction, position de la pomme.
-        # (BONUS : vous pouvez ajouter des features ici — pensez à ajuster la taille (11,) ci-dessus.)
         hx, hy = self.snake[0]; dx, dy = DIRS[self.dir]
         straight = (hx + dx, hy + dy)
         right = (hx + DIRS[(self.dir+1) % 4][0], hy + DIRS[(self.dir+1) % 4][1])
         left  = (hx + DIRS[(self.dir-1) % 4][0], hy + DIRS[(self.dir-1) % 4][1])
         fx, fy = self.food
-        return np.array([self._danger(straight), self._danger(right), self._danger(left),
-                         self.dir == 2, self.dir == 0, self.dir == 3, self.dir == 1,
-                         fx < hx, fx > hx, fy < hy, fy > hy], dtype=np.float32)
+        fournis = [self._danger(straight), self._danger(right), self._danger(left),
+                   self.dir == 2, self.dir == 0, self.dir == 3, self.dir == 1,
+                   fx < hx, fx > hx, fy < hy, fy > hy]
+        # BONUS (+6) : danger à 2 cases devant/droite/gauche + espace libre si on va devant/droite/gauche
+        loin = [self._danger((2*x - hx, 2*y - hy)) for x, y in (straight, right, left)]
+        libre = [self._espace_libre(p) for p in (straight, right, left)]
+        return np.array(fournis + loin + libre, dtype=np.float32)
 
     def _food(self):
         while True:
