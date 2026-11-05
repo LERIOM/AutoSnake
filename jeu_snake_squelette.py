@@ -376,7 +376,7 @@ if __name__ == "__main__":
     model = DQN("MlpPolicy", env, verbose=0,
                 learning_rate=1e-3,
                 buffer_size=100_000, learning_starts=1000, batch_size=64,
-                gamma=0.9,                     # horizon court : suffisant avec ces capteurs locaux
+                gamma=0.99,                    # horizon long : il anticipe les pièges (0.9 -> 37 pommes, 0.99 -> 51)
                 exploration_fraction=0.3, exploration_final_eps=0.05,
                 target_update_interval=500, train_freq=4, seed=0)
     model.learn(total_timesteps=TIMESTEPS)
